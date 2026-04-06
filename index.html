@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人生重构计划-重要的人生窗口</title>
+    <style>
+        :root {
+            --green-bg: #eefeef;
+            --green-text: #0acb7b;
+            --green-border: #bce9cd;
+            
+            --yellow-bg: #fff8eb;
+            --yellow-text: #f0a020;
+            --yellow-border: #fce2a6;
+            
+            --orange-bg: #fff1eb;
+            --orange-text: #fa6432;
+            --orange-border: #facab4;
+
+            --gray-dead-bg: #f5f7f9;
+            --gray-dead-text: #aab2bd;
+            --gray-dead-border: #e6e9ed;
+
+            --bg-color: #f7f9fc;
+            --font-family: "PingFang SC", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: #333;
+            margin: 0;
+            padding: 0;
+            padding-bottom: 80px;
+        }
+
+        /* 顶部控制面板区 */
+        .top-navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #fff;
+            padding: 20px 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-left h1 {
+            font-size: 28px;
+            margin: 0 0 5px 0;
+            color: #1a1a1a;
+        }
+        .header-left h2 {
+            font-size: 14px;
+            font-weight: normal;
+            margin: 0;
+            color: #666;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .control-label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        /* 极简自定义滑块 */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 250px;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #2b2b2b;
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 0 0 4px rgba(255, 0, 0, 0.2);
+            border: 2px solid white;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: #e0e6ed;
+            border-radius: 4px;
+        }
+
+        /* 当前年龄数字展示框 */
+        .age-display-box {
+            display: flex;
+            align-items: baseline;
+            background: #fff;
+            border: 1px solid var(--green-border);
+            padding: 8px 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(10, 203, 123, 0.1);
+        }
+        .age-display-box span.num {
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--green-text);
+            margin-right: 5px;
+            min-width: 32px;
+            text-align: center;
+        }
+        .age-display-box span.unit {
+            font-size: 14px;
+            color: var(--green-text);
+            font-weight: bold;
+        }
+
+        /* 内容区规划 */
+        .main-content {
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 30px 40px;
+        }
+
+        .dimension-section {
+            margin-bottom: 50px;
+        }
+
+        .dimension-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            border-left: 5px solid #2c3e50;
+            padding-left: 15px;
+        }
+
+        /* 卡片主网格 */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+        }
+
+        /* 基础卡片样式 */
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 0 25px 25px 25px;
+            border: 2px solid #eef0f3;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+        }
+
+        /* 不同状态的卡片边缘 */
+        .card.s-open { border-color: var(--green-border); }
+        .card.s-countdown { border-color: var(--yellow-border); }
+        .card.s-locked { border-color: var(--orange-border); }
+
+        /* 终生锁死状态(置灰)的卡片 */
+        .card.s-dead {
+            background: var(--gray-dead-bg);
+            border-color: var(--gray-dead-border);
+            opacity: 0.85;
+            color: var(--gray-dead-text);
+        }
+        .card.s-dead:hover {
+            transform: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+        }
+
+        /* 卡片内部元素 */
+        .card-badge {
+            display: table;
+            margin: 0 auto 15px;
+            padding: 6px 18px;
+            font-size: 13px;
+            font-weight: bold;
+            border-radius: 0 0 12px 12px;
+            text-align: center;
+        }
+        .b-open { background: var(--green-bg); color: var(--green-text); }
+        .b-countdown { background: var(--yellow-bg); color: var(--yellow-text); }
+        .b-locked { background: var(--orange-bg); color: var(--orange-text); }
+        .b-dead { background: var(--gray-dead-border); color: var(--gray-dead-text); }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* 统一生命轨迹进度条 (核心视觉) */
+        .track-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        .track-bar-container {
+            width: 100%;
+            height: 8px;
+            background: #edf1f5;
+            border-radius: 4px;
+            position: relative;
+            margin-bottom: 25px;
+        }
+        /* 绿条表示开放期 */
+        .track-segment {
+            position: absolute;
+            height: 100%;
+            border-radius: 4px;
+        }
+        /* 红色当前年龄标尺 */
+        .track-marker {
+            position: absolute;
+            top: -6px;
+            width: 2px;
+            height: 20px;
+            background-color: #ef4444;
+            z-index: 5;
+            transition: left 0.2s ease;
+        }
+        .track-marker::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -3px;
+            width: 8px;
+            height: 8px;
+            background: #ef4444;
+            border-radius: 50%;
+        }
+
+        .card-desc {
+            font-size: 14px;
+            line-height: 1.6;
+            flex-grow: 1;
+            margin-bottom: 20px;
+            color: #555;
+        }
+        .s-dead .card-desc { color: var(--gray-dead-text); }
+
+        /* 底部数值区 */
+        .card-stats {
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px dotted #e0e0e0;
+            padding-top: 15px;
+            margin-bottom: 10px;
+        }
+        .s-dead .card-stats { border-top-color: #dadddf; }
+
+        .stat-col {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .col-right {
+            align-items: flex-end;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: #888;
+        }
+        .s-dead .stat-label { color: var(--gray-dead-text); }
+        
+        .stat-val-lock {
+            font-size: 26px;
+            font-weight: 900;
+            color: #000;
+            line-height: 1;
+        }
+        .s-dead .stat-val-lock { color: var(--gray-dead-text); }
+        .stat-val-lock span {
+            font-size: 14px;
+            color: #888;
+        }
+
+        .stat-val-cost {
+            font-size: 26px;
+            font-weight: 900;
+            line-height: 1;
+        }
+        /* 代价字样颜色体系 */
+        .c-low { color: #888; }
+        .c-medium { color: var(--yellow-text); }
+        .c-high { color: var(--red-text); }
+        .c-extreme { color: #b71c1c; }
+        .s-dead .stat-val-cost { color: var(--gray-dead-text); }
+
+        .card-category {
+            text-align: right;
+            font-size: 11px;
+            color: #ccd2d8;
+            font-weight: bold;
+        }
+        .s-dead .card-category { color: #dadddf; }
+
+
+        /* 弹出层 (Modal) 样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-content {
+            background: #fff;
+            border-radius: 16px;
+            padding: 0 40px 40px;
+            width: 90%;
+            max-width: 600px;
+            position: relative;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #888;
+            cursor: pointer;
+            font-family: Arial;
+        }
+        .modal-close:hover {
+            background: #f0f0f0;
+        }
+        /* 复用卡片内部的大部分元素但是放大字号 */
+        .modal-content .card-title { font-size: 28px; margin-bottom: 25px; }
+        .modal-content .card-badge { padding: 8px 30px; font-size: 16px; margin-bottom: 20px;}
+        .modal-content .track-bar-container { height: 12px; border-radius: 6px; }
+        .modal-content .track-marker { top: -8px; height: 28px; width: 3px; }
+        .modal-content .track-marker::before { top: -6px; left:-4px; width: 11px; height: 11px; }
+        .modal-content .card-desc { font-size: 18px; text-align: center; padding: 20px 0; margin-bottom: 30px; }
+        .modal-content .stat-val-lock { font-size: 40px; }
+        .modal-content .stat-val-lock span { font-size: 20px; }
+        .modal-content .stat-val-cost { font-size: 40px; }
+        .modal-content .stat-label { font-size: 14px; }
+
+
+        .loading {
+            text-align: center;
+            font-size: 18px;
+            color: #999;
+            padding: 50px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-navbar">
+        <div class="header-left">
+            <h1>人生重构计划-重要的人生窗口</h1>
+            <h2>不可逆的单向衰减：随着年龄增长，系统级机会的窗口并非缓慢缩小，而是“断崖式坍塌”。</h2>
+        </div>
+        <div class="header-right">
+            <span class="control-label">调节观测年龄锚点:</span>
+            <input type="range" id="ageSlider" value="25" min="0" max="100">
+            <div class="age-display-box" id="ageDisplayContainer">
+                <span class="num" id="ageDisplayNum">25</span>
+                <span class="unit">岁</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="main-content" id="appContainer">
+        <div class="loading">加载数据中...</div>
+    </div>
+
+    <!-- 弹窗遮罩层 -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content" id="modalBox">
+            <div class="modal-close" id="modalClose">X</div>
+            <div id="modalInner"></div>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script>
+        // DOM Nodes
+        const ageSlider = document.getElementById('ageSlider');
+        const ageDisplayNum = document.getElementById('ageDisplayNum');
+        const appContainer = document.getElementById('appContainer');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalClose = document.getElementById('modalClose');
+        const modalInner = document.getElementById('modalInner');
+        
+        let flattenedWindows = [];
+        let currentGlobalAge = 25;
+
+        // 静态数据解析加载
+        function loadData() {
+            try {
+                // lifeData 变量已经由上方的 data.js 提供
+                processData();
+                syncAge(25);
+            } catch (err) {
+                appContainer.innerHTML = '<div style="text-align:center; color:red; padding:50px;">加载本地静态数据失败，请确保 data.js 文件与 index.html 在同一目录下。</div>';
+                console.error(err);
+            }
+        }
+
+        // 扁平化数据并准备年龄分组
+        function processData() {
+            lifeData.forEach(dimension => {
+                dimension.windows.forEach(win => {
+                    win.dimensionName = dimension.dimensionName;
+                    
+                    // 计算分布重心
+                    let centerAge = win.openAge; 
+                    if(win.openAge === 0) centerAge = win.goldenAgeEnd / 2;
+                    else centerAge = (win.openAge + win.goldenAgeEnd) / 2;
+                    win._centerAge = centerAge;
+
+                    flattenedWindows.push(win);
+                });
+            });
+            flattenedWindows.sort((a, b) => a._centerAge - b._centerAge);
+        }
+
+        // 滑块交互
+        ageSlider.addEventListener('input', (e) => {
+            syncAge(e.target.value);
+        });
+
+        function syncAge(age) {
+            currentGlobalAge = Math.max(0, Math.min(100, parseInt(age) || 0));
+            ageDisplayNum.textContent = currentGlobalAge;
+            renderAll(currentGlobalAge);
+        }
+
+        // 关闭弹窗
+        modalClose.addEventListener('click', () => { modalOverlay.classList.remove('active'); });
+        modalOverlay.addEventListener('click', (e) => {
+            if(e.target === modalOverlay) modalOverlay.classList.remove('active');
+        });
+
+        // 将补救代价的中英文映射，并匹配颜色类
+        function wrapCost(costStr) {
+            if (costStr === '无可挽回') return { text: 'Extreme', cls: 'c-extreme' };
+            if (costStr === '高') return { text: 'High', cls: 'c-high' };
+            if (costStr === '中') return { text: 'Medium', cls: 'c-medium' };
+            return { text: 'Low', cls: 'c-low' }; 
+        }
+
+        // 核心装配内联 HTML （被网格卡片及弹窗复用）
+        function buildCardInnerHtml(age, win) {
+            const { openAge, goldenAgeEnd, countdownEnd, isIrreversible, maxIntensity } = win;
+
+            let sClass = '';
+            let bClass = '';
+            let bText = '';
+            let severity = '0';
+
+            // 越界判定，若彻底锁死则背景变灰
+            const isDead = age > countdownEnd && isIrreversible;
+
+            if (age < openAge) {
+                sClass = 's-unopened'; bClass = 'bg-gray'; bText = '⏳ 窗口未开';
+                severity = '0';
+            } else if (age <= goldenAgeEnd) {
+                sClass = 's-open'; bClass = 'b-open'; bText = '🔓 窗口开放';
+                severity = '0';
+            } else if (age <= countdownEnd) {
+                sClass = 's-countdown'; bClass = 'b-countdown'; bText = '⏳ 倒计时';
+                // 线性累加锁死强制力
+                const totalDiff = countdownEnd - goldenAgeEnd;
+                let progress = totalDiff === 0 ? 1 : (age - goldenAgeEnd) / totalDiff;
+                severity = Math.round(progress * maxIntensity);
+            } else {
+                if (isDead) { // 终生锁死的灰名单判定
+                    sClass = 's-dead'; bClass = 'b-dead'; bText = '🔒 终生锁死';
+                    severity = maxIntensity; // 100或极高
+                } else {
+                    sClass = 's-locked'; bClass = 'b-locked'; bText = '🔄 高代价补救';
+                    severity = maxIntensity;
+                }
+            }
+            
+            // 轨道颜色区间的计算 (映射为 0~100 的百分比)
+            // openAge -> goldenAgeEnd 是绿色区间
+            let greenLeft = Math.max(0, openAge);
+            let greenWidth = Math.max(0, goldenAgeEnd - openAge);
+            
+            // goldenAgeEnd -> countdownEnd 是黄色区间
+            let yellowLeft = Math.max(0, goldenAgeEnd);
+            let yellowWidth = Math.max(0, countdownEnd - goldenAgeEnd);
+
+            let bestPeriodText = win.openAge === 0 ? `0-${win.goldenAgeEnd} 岁` : `${win.openAge}-${win.goldenAgeEnd} 岁`;
+
+            let costData = wrapCost(win.remedyCost);
+            if (isDead) { costData.text = 'Extreme'; costData.cls = 'c-extreme'; severity = Math.max(severity, 95); } // 若不可挽回必然极高
+
+            // 实际内部HTML生成
+            const innerHTML = `
+                <div class="card-badge ${bClass}">${bText}</div>
+                <div class="card-title">${win.name}</div>
+                
+                <div class="track-header">
+                    <span>最佳执行期</span>
+                    <span>${bestPeriodText}</span>
+                </div>
+                <div class="track-bar-container">
+                    <div class="track-segment" style="background-color: var(--green-text); left:${greenLeft}%; width:${greenWidth}%;"></div>
+                    <div class="track-segment" style="background-color: var(--yellow-text); left:${yellowLeft}%; width:${yellowWidth}%;"></div>
+                    <div class="track-marker" style="left:${age}%;"></div>
+                </div>
+
+                <div class="card-desc">${win.desc}</div>
+
+                <div class="card-stats">
+                    <div class="stat-col">
+                        <div class="stat-label">锁死强制力</div>
+                        <div class="stat-val-lock">${severity} <span>%</span></div>
+                    </div>
+                    <div class="stat-col col-right">
+                        <div class="stat-label">事后补救代价</div>
+                        <div class="stat-val-cost ${costData.cls}">${costData.text}</div>
+                    </div>
+                </div>
+                
+                <div class="card-category">${win.dimensionName}</div>
+            `;
+            return { sClass, innerHTML };
+        }
+
+        // 绑定弹窗点击事件
+        window.openCardModal = function(winStr) {
+            const win = JSON.parse(decodeURIComponent(winStr));
+            const { sClass, innerHTML } = buildCardInnerHtml(currentGlobalAge, win);
+            
+            // Modal 里的外部包裹也需要保持正确的死态 class 才能灰白脱色
+            modalInner.innerHTML = `<div class="${sClass}">${innerHTML}</div>`;
+            modalOverlay.classList.add('active');
+        };
+
+        function renderAll(age) {
+            if (flattenedWindows.length === 0) return;
+            appContainer.innerHTML = '';
+
+            const ageGroups = [
+                { limit: 18, name: "【0-18岁】 认知萌芽与基础构建幼儿", cards: [] },
+                { limit: 25, name: "【19-25岁】 试错探险与黄金积累", cards: [] },
+                { limit: 35, name: "【26-35岁】 核心构建与人生定型", cards: [] },
+                { limit: 45, name: "【36-45岁】 中年危机与二次重塑", cards: [] },
+                { limit: 60, name: "【46-60岁】 守成防守与接纳妥协", cards: [] },
+                { limit: 999, name: "【60岁以上】 迟暮交接与人生终局", cards: [] }
+            ];
+
+            flattenedWindows.forEach(win => {
+                for (let group of ageGroups) {
+                    if (win._centerAge <= group.limit) {
+                        group.cards.push(win); break;
+                    }
+                }
+            });
+
+            ageGroups.forEach(group => {
+                if(group.cards.length === 0) return;
+
+                const section = document.createElement('div');
+                section.className = 'dimension-section';
+                section.innerHTML = `<div class="dimension-title">${group.name}</div>`;
+                
+                const grid = document.createElement('div');
+                grid.className = 'cards-grid';
+                
+                group.cards.forEach(win => {
+                    const { sClass, innerHTML } = buildCardInnerHtml(age, win);
+                    
+                    const card = document.createElement('div');
+                    card.className = `card ${sClass}`;
+                    card.innerHTML = innerHTML;
+
+                    // 序列化后挂载在 DOM 上响应点击
+                    const safeJsonStr = encodeURIComponent(JSON.stringify(win));
+                    card.onclick = () => window.openCardModal(safeJsonStr);
+
+                    grid.appendChild(card);
+                });
+                
+                section.appendChild(grid);
+                appContainer.appendChild(section);
+            });
+        }
+
+        // Boot
+        window.addEventListener('DOMContentLoaded', loadData);
+    </script>
+</body>
+</html>
